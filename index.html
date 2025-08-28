@@ -3,46 +3,613 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quay Số May Mắn</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Vòng Quay May Mắn</title>
+    <style>
+        /* GIỮ NGUYÊN CSS CỦA BẠN CHO GIAO DIỆN CHUNG */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #f0f0f0;
+            font-size: 1.2em;
+            margin-bottom: 80px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto 30px;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 
+                0 0 40px rgba(255,255,255,0.2),
+                0 0 0 15px #fff,
+                0 0 0 20px #333;
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        /* 4 phần của vòng quay */
+        .wheel-section {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            /* Để dễ hình dung, các section được đặt theo thứ tự trong HTML: */
+            /* 1: Top-Left, 2: Top-Right, 3: Bottom-Left, 4: Bottom-Right */
+        }
+
+        .wheel-section:nth-child(1) {
+            top: 0;
+            left: 0;
+            background: linear-gradient(135deg, #ff6b6b, #ff4757);
+            transform-origin: bottom right; /* Giữ nguyên transform-origin của bạn */
+            border-radius: 100% 0 0 0;
+        }
+
+        .wheel-section:nth-child(2) {
+            top: 0;
+            right: 0;
+            background: linear-gradient(135deg, #4ecdc4, #26d0ce);
+            transform-origin: bottom left;
+            border-radius: 0 100% 0 0;
+        }
+
+        .wheel-section:nth-child(3) {
+            bottom: 0;
+            left: 0; /* Đã sửa: bottom-left cho section 3 */
+            background: linear-gradient(135deg, #f9ca24, #f0932b); /* Đã đổi màu một chút cho khớp với thứ tự trong JS nếu muốn */
+            transform-origin: top right;
+            border-radius: 0 0 0 100%;
+        }
+        
+        .wheel-section:nth-child(4) {
+            bottom: 0;
+            right: 0; /* Đã sửa: bottom-right cho section 4 */
+            background: linear-gradient(135deg, #45b7d1, #3742fa); /* Đã đổi màu một chút cho khớp với thứ tự trong JS nếu muốn */
+            transform-origin: top left;
+            border-radius: 0 0 100% 0;
+        }
+
+        .wheel-section img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 3px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .section-name {
+            font-size: 0.9em;
+            text-align: center;
+            line-height: 1.2;
+            margin-bottom: 5px;
+        }
+
+        .section-price {
+            font-size: 0.8em;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        /* Mũi tên chỉ xuống - ĐÃ CHỈNH SỬA */
+        .pointer {
+            position: absolute;
+            top: -65px; /* Đặt mũi tên phía trên vòng quay */
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 45px solid #ff4757; /* Mũi tên chỉ xuống */
+            transform: translateX(-50%) rotate(180deg);;
+            z-index: 10;
+            filter: drop-shadow(0 6px 15px rgba(255, 71, 87, 0.5));
+            transition: transform 0.2s ease;
+        }
+        /* Xóa bỏ phần "tròn tròn" bằng cách không khai báo ::after hay ::before */
+
+        /* Center circle */
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border: 5px solid #fff;
+            z-index: 5;
+        }
+
+        .center-text {
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        #spinButton {
+            background: linear-gradient(135deg, #ff6b6b, #ff4757);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+        }
+
+        #spinButton:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 71, 87, 0.4);
+            background: linear-gradient(135deg, #ff5252, #e53935);
+        }
+
+        #spinButton:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .spinning {
+            animation: spinWheel 4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        /* Animation xoay vòng - luôn dừng tại vị trí bình nước 100k */
+        @keyframes spinWheel {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(1440deg); /* 4 vòng + dừng tại vị trí cần thiết */
+            }
+        }
+
+        /* Result modal */
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .result-modal.active {
+            display: flex;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .result-content {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: bounceIn 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .result-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+        }
+
+        .result-content h2 {
+            font-size: 2.2em;
+            color: #333;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .winner-item {
+            background: linear-gradient(135deg, #fff 0%, #f1f3f4 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 3px solid #ff4757;
+        }
+
+        .winner-item img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 4px solid #ff4757;
+        }
+
+        .winner-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .winner-price {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #e74c3c;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .close-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .close-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        /* Confetti animation */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+            animation: confetti-fall 3s linear infinite;
+            z-index: 999;
+        }
+
+        .confetti:nth-child(2n) { background: #4ecdc4; animation-delay: 0.2s; }
+        .confetti:nth-child(3n) { background: #45b7d1; animation-delay: 0.4s; }
+        .confetti:nth-child(4n) { background: #f9ca24; animation-delay: 0.6s; }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wheel-wrapper {
+                width: 350px;
+                height: 350px;
+            }
+
+            .wheel-section img {
+                width: 60px;
+                height: 60px;
+            }
+
+            .section-name {
+                font-size: 0.8em;
+            }
+
+            .section-price {
+                font-size: 0.7em;
+            }
+
+            .center-circle {
+                width: 70px;
+                height: 70px;
+            }
+
+            .center-text {
+                font-size: 0.8em;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .wheel-wrapper {
+                width: 300px;
+                height: 300px;
+            }
+
+            .wheel-section img {
+                width: 50px;
+                height: 50px;
+            }
+
+            .section-name {
+                font-size: 0.75em;
+            }
+
+            .section-price {
+                font-size: 0.65em;
+            }
+
+            .center-circle {
+                width: 60px;
+                height: 60px;
+            }
+
+            .result-content {
+                padding: 30px 20px;
+            }
+
+            .result-content h2 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Quay Số May Mắn</h1>
-        <p>Ấn "Quay" để nhận phần thưởng của bạn!</p>
+        <h1>🎯 Vòng Quay May Mắn 🎯</h1>
+        <p class="subtitle">Quay để nhận ngay phần quà hấp dẫn!</p>
 
-        <div class="items-grid">
-            <!-- Các sản phẩm của bạn -->
-            <div class="item" data-id="binh-nuoc-100k">
-                <img src="https://via.placeholder.com/150/0000FF/FFFFFF?text=Binh+Nuoc" alt="Bình đựng nước">
-                <p>Bình đựng nước</p>
-                <p class="price">100.000 VNĐ</p>
+        <div class="wheel-wrapper">
+            <div class="wheel-container" id="wheel">
+                <!-- Các phần tử wheel-section trong HTML của bạn được sắp xếp như sau: -->
+                <!-- Section 1: Top-Left -->
+                <div class="wheel-section">
+                    <img src="images/binhnuocautumn.png" alt="Bình đựng nước">
+                    <div class="section-name">Bình đựng nước autumn</div>
+                    <div class="section-price">100.000đ</div>
+                </div>
+
+                <!-- Section 2: Top-Right -->
+                <div class="wheel-section">
+                    <img src="images/thung-da-minice.jpg" alt="Thùng đá minice">
+                    <div class="section-name">Thùng đá minice</div>
+                    <div class="section-price">200.000đ</div>
+                </div>
+                
+                <!-- Section 3: Bottom-Left -->
+                <div class="wheel-section">
+                    <img src="images/tu-nhua-3-tang.jpg" alt="Tủ nhựa 3 tầng">
+                    <div class="section-name">Tủ nhựa 3 tầng</div>
+                    <div class="section-price">300.000đ</div>
+                </div>
+                
+                <!-- Section 4: Bottom-Right -->
+                <div class="wheel-section">
+                    <img src="images/binh-da-ICOOL-20L.jpg" alt="Bình đá ICOOL">
+                    <div class="section-name">Bình Đá ICOOL 20L</div>
+                    <div class="section-price">500.000đ</div>
+                </div>
+
+                <div class="center-circle">
+                    <div class="center-text">QUAY<br>NGAY</div>
+                </div>
             </div>
-            <div class="item" data-id="hop-com-200k">
-                <img src="https://via.placeholder.com/150/FF0000/FFFFFF?text=Hop+Com" alt="Hộp đựng cơm">
-                <p>Hộp đựng cơm giữ nhiệt</p>
-                <p class="price">200.000 VNĐ</p>
-            </div>
-            <div class="item" data-id="hop-do-300k">
-                <img src="https://via.placeholder.com/150/00FF00/FFFFFF?text=Hop+Do" alt="Hộp đựng đồ">
-                <p>Hộp đựng đồ 3 tầng</p>
-                <p class="price">300.000 VNĐ</p>
-            </div>
-            <div class="item" data-id="binh-lon-500k">
-                <img src="https://via.placeholder.com/150/FFFF00/000000?text=Binh+Lon" alt="Bình lớn">
-                <p>Bình đựng nước giữ nhiệt cỡ lớn</p>
-                <p class="price">500.000 VNĐ</p>
-            </div>
+            
+            <!-- Mũi tên chỉ xuống -->
+            <div class="pointer"></div>
         </div>
 
-        <button id="spinButton">Quay</button>
+        <button id="spinButton">🎲 QUAY NGAY 🎲</button>
+    </div>
 
-        <div class="result-area">
-            <h2>Kết quả:</h2>
-            <p id="resultDisplay">Ấn "Quay" để bắt đầu...</p>
+    <!-- Result modal -->
+    <div class="result-modal" id="resultModal">
+        <div class="result-content">
+            <h2>🎉 CHÚC MỪNG! 🎉</h2>
+            <div class="winner-item">
+                <!-- Ảnh placeholder ban đầu, sẽ được thay thế bằng ảnh của phần thưởng thật -->
+                <img src="images/binhnuocautumn.png" alt="Phần thưởng">
+                <div class="winner-name"></div>
+                <div class="winner-price"></div>
+            </div>
+            <button class="close-btn" onclick="closeResult()">🎊 Nhận ngay! 🎊</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const spinButton = document.getElementById('spinButton');
+            const wheel = document.getElementById('wheel');
+            const resultModal = document.getElementById('resultModal');
+
+            // Danh sách các phần thưởng, theo đúng thứ tự bạn muốn hiển thị trong kết quả,
+            // KHÔNG NHẤT THIẾT phải theo thứ tự trực quan trên vòng quay.
+            // Thứ tự này sẽ được dùng để xác định prize[index]
+            const prizes = [
+                {name: "Bình đựng nước autumn", price: "100.000 VNĐ", img: "images/binhnuocautumn.png"}, // Index 0
+                {name: "Thùng đá minice", price: "200.000 VNĐ", img: "images/thung-da-minice.jpg"},   // Index 1
+                {name: "Bình Đá ICOOL 20L", price: "500.000 VNĐ", img: "binh-da-ICOOL-20L.jpg"}, // Index 2
+                {name: "Tủ nhựa 3 tầng", price: "300.000 VNĐ", img: "images/tu-nhua-3-tang.jpg"},       // Index 3
+            ];
+
+            let isSpinning = false;
+
+            function createConfetti() {
+                for (let i = 0; i < 30; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.className = 'confetti';
+                        confetti.style.left = Math.random() * 100 + '%';
+                        confetti.style.animationDelay = Math.random() * 2 + 's';
+                        document.body.appendChild(confetti);
+                        
+                        setTimeout(() => confetti.remove(), 3000);
+                    }, Math.random() * 500);
+                }
+            }
+
+            function showResult(prize) {
+                // Đảm bảo cập nhật nội dung modal kết quả
+                document.querySelector("#resultModal .winner-item img").src = prize.img;
+                document.querySelector("#resultModal .winner-name").textContent = prize.name;
+                document.querySelector("#resultModal .winner-price").textContent = prize.price;
+
+                createConfetti();
+                setTimeout(() => {
+                    resultModal.classList.add('active');
+                }, 1000); // Hiển thị modal sau 1 giây
+            }
+
+            window.closeResult = function() {
+                resultModal.classList.remove('active');
+                // Tùy chọn: Xóa hết các hạt confetti khi đóng modal
+                document.querySelectorAll('.confetti').forEach(c => c.remove());
+            }
+
+            spinButton.addEventListener('click', () => {
+                if (isSpinning) return;
+
+                isSpinning = true;
+                spinButton.disabled = true;
+                spinButton.textContent = '🎲 ĐANG QUAY... 🎲';
+
+                // --- CẤU HÌNH QUAN TRỌNG: LUÔN CHỌN MÓN NÀY ---
+                const forcedPrizeIndex = 0; // Luôn chọn "Bình đựng nước autumn" (index 0 trong mảng `prizes`)
+                const prize = prizes[forcedPrizeIndex];
+                // --- HẾT CẤU HÌNH ---
+
+                // --- TÍNH TOÁN GÓC DỪNG CỦA BÁNH XE ---
+                // Mũi tên hiện tại của bạn được đặt ở phía trên cùng của bánh xe, chỉ xuống (0 độ).
+                // Chúng ta cần xoay bánh xe sao cho phần thưởng mục tiêu di chuyển đến vị trí 0 độ (ngay dưới mũi tên).
+                // Các section trong HTML của bạn được sắp xếp như sau (vị trí ban đầu tương đối của tâm):
+                // Section 1 (prizes[0]): Top-Left (~315 độ nếu 0 độ là Top-Center, quay theo chiều kim đồng hồ)
+                // Section 2 (prizes[1]): Top-Right (~45 độ)
+                // Section 3 (prizes[3]): Bottom-Left (~225 độ)
+                // Section 4 (prizes[2]): Bottom-Right (~135 độ)
+
+                let targetStopAngle;
+                if (forcedPrizeIndex === 0) { // Bình đựng nước autumn (prizes[0]) -> Vị trí Top-Left
+                    // Để Top-Left (315 độ) đến Top-Center (0 độ), cần xoay: (0 - 315 + 360) % 360 = 45 độ
+                    targetStopAngle = 45;
+                } else if (forcedPrizeIndex === 1) { // Thùng đá minice (prizes[1]) -> Vị trí Top-Right
+                    // Để Top-Right (45 độ) đến Top-Center (0 độ), cần xoay: (0 - 45 + 360) % 360 = 315 độ
+                    targetStopAngle = 315;
+                } else if (forcedPrizeIndex === 3) { // Tủ nhựa 3 tầng (prizes[3]) -> Vị trí Bottom-Left
+                    // Để Bottom-Left (225 độ) đến Top-Center (0 độ), cần xoay: (0 - 225 + 360) % 360 = 135 độ
+                    targetStopAngle = 135;
+                } else if (forcedPrizeIndex === 2) { // Bình Đá ICOOL 20L (prizes[2]) -> Vị trí Bottom-Right
+                    // Để Bottom-Right (135 độ) đến Top-Center (0 độ), cần xoay: (0 - 135 + 360) % 360 = 225 độ
+                    targetStopAngle = 225;
+                } else {
+                    targetStopAngle = 0; // Trường hợp không mong muốn
+                    console.error("Lỗi: Index phần thưởng mục tiêu không hợp lệ.");
+                }
+
+                // Xoay thêm 5 vòng đầy đủ (5 * 360 = 1800 độ) để tạo hiệu ứng quay
+                const totalRotation = 1800 + targetStopAngle;
+
+                wheel.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+                setTimeout(() => {
+                    // Sau khi quay xong, đặt lại transition về 'none' và đặt góc xoay về giá trị chuẩn
+                    // Điều này giúp vòng quay không bị "giật" nếu người dùng quay lại
+                    wheel.style.transition = 'none';
+                    const normalizedAngle = totalRotation % 360; // Chỉ giữ lại góc cuối cùng (0-359 độ)
+                    wheel.style.transform = `rotate(${normalizedAngle}deg)`;
+
+                    showResult(prize); // Luôn hiển thị kết quả là phần thưởng đã chọn
+                    
+                    isSpinning = false;
+                    spinButton.disabled = false;
+                    spinButton.textContent = '🎲 QUAY LẠI 🎲';
+                }, 4000); // 4 giây là thời gian của transition
+            });
+        });
+    </script>
 </body>
 </html>
